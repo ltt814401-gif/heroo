@@ -1,4 +1,4 @@
-﻿name: HeroDrama Image Auto Publisher
+name: HeroDrama Image Auto Publisher
 
 on:
 schedule:
