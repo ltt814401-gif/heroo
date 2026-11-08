@@ -20,7 +20,18 @@ jobs:
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
         shell: pwsh
         run: |
-          ./publish.ps1
+          $ErrorActionPreference = 'Stop'
+          try {
+              Write-Host "Starting publish script..."
+              ./publish.ps1
+          } catch {
+              Write-Error "Script execution failed: $_"
+              exit 1
+          }
+
+      - name: Commit state changes
+        if: always()
+        run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "bot@github.com"
           git add state.json
