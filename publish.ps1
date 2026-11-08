@@ -1,7 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 $token  = $env:META_ACCESS_TOKEN
 $pageId = $env:META_PAGE_ID
-$api    = 'https://graph-video.facebook.com/v21.0'
+$api    = 'https://graph.facebook.com/v21.0'
 if (-not $token -or -not $pageId) { throw 'META_ACCESS_TOKEN or META_PAGE_ID is missing.' }
 
 $titles = @{ 'Series_01'='爱无止境'; 'Series_02'='爱无止境'; 'Series_03'='爱无止境'; 'Series_04'='爱无止境' }
@@ -39,10 +39,11 @@ $caption = $captionTemplate -f $title
 Write-Host "Publishing $($video.Name) from $($folder.Name) ..."
 
 try {
-    $res = Invoke-RestMethod -Method Post -Uri "$api/$pageId/videos" -Form @{
-        source = (Get-Item $video.FullName); description = $caption; access_token = $token
-    }
-    Write-Host "SUCCESS. Facebook video id: $($res.id)"
+    $size = (Get-Item $video.FullName).Length
+    $s = Invoke-RestMethod -Method Post -Uri "$api/$pageId/video_reels" -Body @{ upload_phase = 'start'; access_token = $token }
+    Invoke-RestMethod -Method Post -Uri $s.upload_url -Headers @{ Authorization = "OAuth $token"; offset = '0'; file_size = "$size" } -InFile $video.FullName -ContentType 'application/octet-stream' | Out-Null
+    $fin = Invoke-RestMethod -Method Post -Uri "$api/$pageId/video_reels" -Body @{ upload_phase = 'finish'; video_id = $s.video_id; video_state = 'PUBLISHED'; description = $caption; access_token = $token }
+    Write-Host "SUCCESS. Reel video id: $($s.video_id) $($fin | ConvertTo-Json -Compress)"
     $state.current_episode_index++
     Save-State
 }
