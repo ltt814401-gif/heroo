@@ -1,29 +1,37 @@
 ﻿name: HeroDrama Image Auto Publisher
 
 on:
-  schedule:
-    - cron: '15 1,6,11,16,21 * * *'
-  workflow_dispatch:
+schedule:
+- cron: '15 1,6,11,16,21 * * *'
+workflow_dispatch:
 
 jobs:
-  publish-image:
-    runs-on: windows-latest
+publish-image:
+runs-on: ubuntu-latest
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+  - name: Publish Random Poster to Facebook
+    env:
+      META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+      PAGE_ID: "1340333599167943"
+    run: |
+      IMAGE_PATH=$(find posters -type f \( -name "*.jpg" -o -name "*.png" \) | head -n 1)
+      
+      if [ -z "$IMAGE_PATH" ]; then
+        echo "No images found!"
+        exit 1
+      fi
+      
+      echo "Found image: $IMAGE_PATH"
+      
+      CAPTION="剧集《爱无止境》现已在 HeroDrama 平台上线！
+      可在 Google Play 和 App Store 下载，立即观看最新热播内容，享受超高清画质！
+      下载 HeroDrama，精彩不间断！
+      #HeroDrama #爱无止境 #热门短剧 #追剧 #高清画质 #短剧推荐 #好剧推荐 #必看剧集 #GooglePlay #AppStore #下载观看 #电视剧"
 
-      - name: Run Image Publisher Script
-        env:
-          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
-        shell: powershell
-        run: |
-          .\publish-images.ps1
-
-      - name: Commit and Push Updated Image State
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add image_state.json
-          git status
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update image_state.json [skip ci]" && git push)
+      curl -s -X POST "https://graph.facebook.com/v18.0/$PAGE_ID/photos" \
+        -F "access_token=$META_ACCESS_TOKEN" \
+        -F "message=$CAPTION" \
+        -F "source=@$IMAGE_PATH"
