@@ -1,0 +1,29 @@
+﻿name: HeroDrama Image Auto Publisher
+
+on:
+  schedule:
+    - cron: '15 1,6,11,16,21 * * *'
+  workflow_dispatch:
+
+jobs:
+  publish-image:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Image Publisher Script
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+        shell: powershell
+        run: |
+          .\publish-images.ps1
+
+      - name: Commit and Push Updated Image State
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add image_state.json
+          git status
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update image_state.json [skip ci]" && git push)
