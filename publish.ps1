@@ -38,6 +38,7 @@ $title   = if ($titles.ContainsKey($folder.Name)) { $titles[$folder.Name] } else
 $caption = $captionTemplate -f $title
 Write-Host "Publishing $($video.Name) from $($folder.Name) ..."
 
+Write-Host ('Token length: ' + $token.Length + ' PageId: ' + $pageId)
 try {
     $size = (Get-Item $video.FullName).Length
     $s = Invoke-RestMethod -Method Post -Uri "$api/$pageId/video_reels" -Body @{ upload_phase = 'start'; access_token = $token }
@@ -58,3 +59,4 @@ catch {
     }
     throw
 }
+
